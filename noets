@@ -1,0 +1,89 @@
+# /bin/bash
+# set -e 
+
+Todaysdate=$(date +"%m-%d-%Y")
+Path="/Users/zhjng/daily_notes/${Todaysdate}"
+RootPath="/Users/zhjng/daily_notes/"
+Only_list_files=false
+FileName=""
+Open_File=false
+Search_file=false
+SearchKeyword=""
+
+OPTIONS="lo:f:"
+while getopts "$OPTIONS" opt; do
+    case "$opt" in
+    l)
+        Only_list_files=true
+        ;;
+    o)
+        Open_File=true
+        FileName=$OPTARG
+        ;;
+   f)
+       Search_file=true
+       SearchKeyword=$OPTARG
+       ;;
+   *)
+        exit 1
+        ;;
+    esac
+done
+
+main(){
+    if [ "$Open_File" = true ]; then
+        open_file $FileName
+    fi
+    if [ "$Search_file" = true ]; then
+        search_file $SearchKeyword
+    fi
+    remove_corrupted_files
+    if [ "$Only_list_files" = true ]; then
+        list_files
+    else
+        create_and_open_file
+    fi
+}
+
+function open_file(){
+    if [ ! -z $1 ]; then
+        open -a macvim $RootPath$1
+    fi
+    exit 1
+}
+
+function search_file(){
+    if [ ! -z $1 ]; then
+        grep --color=always $1 $RootPath/* | sed 's/\/Users\/zhjng\/daily_notes\/\///g'
+    fi
+    exit 1
+}
+
+
+function remove_corrupted_files(){
+    if [ -f  $RootPath/':w' ]; then
+       rm $RootPath/':w'
+    fi
+    if [ -f  $RootPath/':wq' ]; then
+       rm $RootPath/':wq'
+    fi
+}
+
+
+function list_files(){
+# hide notes file, so we dont need to use "grep -v"
+#    ls  ~/daily_notes/ | grep -v "notes"
+    ls ~/daily_notes/
+    if [ "$Only_list_files" = true ]; then
+        exit 1 
+    fi
+}
+
+function create_and_open_file(){
+    mkdir -p /Users/zhjng/daily_notes
+    touch $Path
+    list_files
+    open -a macvim $Path
+}
+
+main
